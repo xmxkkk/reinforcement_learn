@@ -39,14 +39,14 @@ LAMBDA=0.9
 #         [0, 1, 0, 1, 0, 1, 0, 1],
 #         [0, 0, 0, 1, 0, 0, 0, 2],
 #     ])
-# MAP=np.array([
-#         [0, 0, 1, 0, 0, 0,],
-#         [0, 1, 0, 0, 1, 0],
-#         [0, 0, 1, 0, 1, 0],
-#         [0, 0, 0, 0, 1, 0],
-#         [0, 1, 0, 1, 2, 0],
-#         [0, 0, 0, 1, 0, 0],
-#     ])
+MAP=np.array([
+        [0, 0, 1, 0, 0, 0],
+        [0, 1, 0, 0, 1, 0],
+        [0, 0, 1, 0, 1, 0],
+        [0, 0, 0, 0, 1, 0],
+        [0, 1, 0, 1, 2, 0],
+        [0, 0, 0, 1, 0, 0],
+    ])
 # MAP=np.array([
 #         [0, 0, 0, 0],
 #         [0, 0, 1, 0],
@@ -54,11 +54,11 @@ LAMBDA=0.9
 #         [0, 0, 0, 0],
 #     ])
 
-MAP=np.array([
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 1, 2],
-    ])
+# MAP=np.array([
+#         [0, 0, 0],
+#         [0, 1, 0],
+#         [0, 1, 2],
+#     ])
 
 WIDTH=MAP.shape[0]
 HEIGHT=MAP.shape[1]
@@ -71,6 +71,7 @@ def choose_action(x,y,q_table,test=False):
     state_actions=q_table[y][x]
 
     while True:
+        '''
         if ((np.random.uniform()>EPSILON) or (state_actions.sum()==0)) and not test:
             action_name=np.random.choice(ACTIONS)
         else:
@@ -84,6 +85,11 @@ def choose_action(x,y,q_table,test=False):
             else:
                 idx=np.random.choice(lst)
                 action_name=ACTIONS[idx]
+'''
+        if np.random.rand()<EPSILON:
+            action_name=np.random.choice(state_actions[state_actions==np.max(state_actions)].index)
+        else:
+            action_name=np.random.choice(ACTIONS)
 
 
         if x==0 and action_name=='left':
@@ -138,18 +144,21 @@ def printQ(q_table):
 
 def rl():
     q_table=build_q_table()
+
     for episode in range(MAX_EPISODES):
+
+        q_table_copy=np.zeros((WIDTH,HEIGHT,4))
+
         step_counter=0
         x=0
         y=0
         is_terminated=False
         # update_env(x,y,episode,step_counter)
+        A = choose_action(x, y, q_table, test=False)
         while not is_terminated:
-            if episode==MAX_EPISODES-1:
-                A = choose_action(x,y,q_table,test=True)
-            else:
-                A = choose_action(x, y, q_table, test=False)
             x_,y_,R=get_env_feedback(x,y,A)
+
+            A_ = choose_action(x_, y_, q_table, test=False)
 
             idx=ACTIONS.index(A)
             q_predit=q_table[y][x][idx]
@@ -158,12 +167,20 @@ def rl():
                 q_target = R
                 is_terminated = True
             else:
-                q_target = R + LAMBDA * q_table[y_][x_].max()
+                q_target = R + LAMBDA * q_table[y_][x_][ACTIONS.index(A_)]
 
-            q_table[y][x][idx]+=ALPHA*(q_target-q_predit)
+            error =q_target-q_predit
+
+            q_table_copy[y][x]*=0
+            q_table_copy[y][x][ACTIONS.index(A)]=1
+
+            q_table+=ALPHA * error *q_table_copy
+
+            q_table_copy*=0.9*0.9
 
             x=x_
             y=y_
+            A=A_
 
             # update_env(x,y,episode,step_counter+1)
             step_counter+=1

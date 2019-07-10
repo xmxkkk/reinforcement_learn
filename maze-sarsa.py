@@ -29,18 +29,18 @@ LAMBDA=0.9
 #         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
 #     ])
 
+MAP=np.array([
+        [0, 0, 0, 1, 0, 0, 0, 0],
+        [0, 1, 0, 1, 0, 1, 1, 0],
+        [0, 0, 0, 1, 0, 1, 1, 0],
+        [1, 0, 0, 0, 0, 1, 1, 0],
+        [0, 0, 1, 1, 1, 0, 1, 0],
+        [0, 1, 0, 0, 0, 0, 1, 0],
+        [0, 1, 0, 1, 0, 1, 0, 1],
+        [0, 0, 0, 1, 0, 0, 0, 2],
+    ])
 # MAP=np.array([
-#         [0, 0, 0, 1, 0, 0, 0, 0],
-#         [0, 1, 0, 1, 0, 1, 1, 0],
-#         [0, 0, 0, 1, 0, 1, 1, 0],
-#         [1, 0, 0, 0, 0, 1, 1, 0],
-#         [0, 0, 1, 1, 1, 0, 1, 0],
-#         [0, 1, 0, 0, 0, 0, 1, 0],
-#         [0, 1, 0, 1, 0, 1, 0, 1],
-#         [0, 0, 0, 1, 0, 0, 0, 2],
-#     ])
-# MAP=np.array([
-#         [0, 0, 1, 0, 0, 0,],
+#         [0, 0, 1, 0, 0, 0],
 #         [0, 1, 0, 0, 1, 0],
 #         [0, 0, 1, 0, 1, 0],
 #         [0, 0, 0, 0, 1, 0],
@@ -54,11 +54,11 @@ LAMBDA=0.9
 #         [0, 0, 0, 0],
 #     ])
 
-MAP=np.array([
-        [0, 0, 0],
-        [0, 1, 0],
-        [0, 1, 2],
-    ])
+# MAP=np.array([
+#         [0, 0, 0],
+#         [0, 1, 0],
+#         [0, 1, 2],
+#     ])
 
 WIDTH=MAP.shape[0]
 HEIGHT=MAP.shape[1]
@@ -84,7 +84,6 @@ def choose_action(x,y,q_table,test=False):
             else:
                 idx=np.random.choice(lst)
                 action_name=ACTIONS[idx]
-
 
         if x==0 and action_name=='left':
             continue
@@ -144,12 +143,11 @@ def rl():
         y=0
         is_terminated=False
         # update_env(x,y,episode,step_counter)
+        A = choose_action(x, y, q_table, test=False)
         while not is_terminated:
-            if episode==MAX_EPISODES-1:
-                A = choose_action(x,y,q_table,test=True)
-            else:
-                A = choose_action(x, y, q_table, test=False)
             x_,y_,R=get_env_feedback(x,y,A)
+
+            A_ = choose_action(x_, y_, q_table, test=False)
 
             idx=ACTIONS.index(A)
             q_predit=q_table[y][x][idx]
@@ -158,12 +156,13 @@ def rl():
                 q_target = R
                 is_terminated = True
             else:
-                q_target = R + LAMBDA * q_table[y_][x_].max()
+                q_target = R + LAMBDA * q_table[y_][x_][ACTIONS.index(A_)]
 
             q_table[y][x][idx]+=ALPHA*(q_target-q_predit)
 
             x=x_
             y=y_
+            A=A_
 
             # update_env(x,y,episode,step_counter+1)
             step_counter+=1
